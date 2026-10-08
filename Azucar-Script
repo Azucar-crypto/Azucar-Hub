@@ -1,0 +1,266 @@
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+local CoreGui = game:GetService("CoreGui")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+local transparencyEnabled = false
+local opponentEnabled = false
+local isMinimized = false
+
+----------------------------------------------------
+-- INTERFAZ GRÁFICA: AZUCAR/HUB
+----------------------------------------------------
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "AzucarHubGui"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = player:WaitForChild("PlayerGui")
+
+-- Ventana Principal
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 190, 0, 155)
+mainFrame.Position = UDim2.new(0.5, -95, 0.25, 0)
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+mainFrame.BorderSizePixel = 0
+mainFrame.Active = true
+mainFrame.Parent = screenGui
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 8)
+corner.Parent = mainFrame
+
+-- Barra de Título
+local titleBar = Instance.new("Frame")
+titleBar.Size = UDim2.new(1, 0, 0, 28)
+titleBar.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+titleBar.BorderSizePixel = 0
+titleBar.Parent = mainFrame
+
+local titleCorner = Instance.new("UICorner")
+titleCorner.CornerRadius = UDim.new(0, 8)
+titleCorner.Parent = titleBar
+
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(0.75, 0, 1, 0)
+titleLabel.Position = UDim2.new(0.05, 0, 0, 0)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "Azucar/Hub"
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.Font = Enum.Font.SourceSansBold
+titleLabel.TextSize = 13
+titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+titleLabel.Parent = titleBar
+
+-- Botón Minimizar (-)
+local minimizeBtn = Instance.new("TextButton")
+minimizeBtn.Size = UDim2.new(0, 22, 0, 22)
+minimizeBtn.Position = UDim2.new(0.82, 0, 0.12, 0)
+minimizeBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+minimizeBtn.Text = "-"
+minimizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+minimizeBtn.Font = Enum.Font.SourceSansBold
+minimizeBtn.TextSize = 14
+minimizeBtn.Parent = titleBar
+
+local minCorner = Instance.new("UICorner")
+minCorner.CornerRadius = UDim.new(0, 4)
+minCorner.Parent = minimizeBtn
+
+-- Miniatura flotante (Cuadrado con AH)
+local miniButton = Instance.new("TextButton")
+miniButton.Size = UDim2.new(0, 45, 0, 45)
+miniButton.Position = UDim2.new(0.1, 0, 0.1, 0)
+miniButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+miniButton.Text = "AH"
+miniButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+miniButton.Font = Enum.Font.SourceSansBold
+miniButton.TextSize = 16
+miniButton.Visible = false
+miniButton.Active = true
+miniButton.Parent = screenGui
+
+local miniCorner = Instance.new("UICorner")
+miniCorner.CornerRadius = UDim.new(0, 8)
+miniCorner.Parent = miniButton
+
+-- Botón 1: Transparency (Forzar Transparencia)
+local transButton = Instance.new("TextButton")
+transButton.Size = UDim2.new(0.85, 0, 0, 32)
+transButton.Position = UDim2.new(0.075, 0, 0.28, 0)
+transButton.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+transButton.Text = "Transparency: OFF"
+transButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+transButton.Font = Enum.Font.SourceSansBold
+transButton.TextSize = 12
+transButton.Parent = mainFrame
+
+local transCorner = Instance.new("UICorner")
+transCorner.CornerRadius = UDim.new(0, 6)
+transCorner.Parent = transButton
+
+-- Botón 2: Opponent (Selección de oponente)
+local oppButton = Instance.new("TextButton")
+oppButton.Size = UDim2.new(0.85, 0, 0, 32)
+oppButton.Position = UDim2.new(0.075, 0, 0.63, 0)
+oppButton.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+oppButton.Text = "Opponent: OFF"
+oppButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+oppButton.Font = Enum.Font.SourceSansBold
+oppButton.TextSize = 12
+oppButton.Parent = mainFrame
+
+local oppCorner = Instance.new("UICorner")
+oppCorner.CornerRadius = UDim.new(0, 6)
+oppCorner.Parent = oppButton
+
+----------------------------------------------------
+-- SISTEMA DE ARRASTRE (Ventana y Miniatura)
+----------------------------------------------------
+local function makeDraggable(frame)
+	local dragging, dragStart, startPos
+	frame.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			dragging = true
+			dragStart = input.Position
+			startPos = frame.Position
+			input.Changed:Connect(function()
+				if input.UserInputState == Enum.UserInputState.End then dragging = false end
+			end)
+		end
+	end)
+
+	UserInputService.InputChanged:Connect(function(input)
+		if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+			local delta = input.Position - dragStart
+			frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+		end
+	end)
+end
+
+makeDraggable(mainFrame)
+makeDraggable(miniButton)
+
+-- Minimizar y Restaurar
+minimizeBtn.MouseButton1Click:Connect(function()
+	mainFrame.Visible = false
+	miniButton.Visible = true
+end)
+
+miniButton.MouseButton1Click:Connect(function()
+	miniButton.Visible = false
+	mainFrame.Visible = true
+end)
+
+----------------------------------------------------
+-- 1. LÓGICA DE TRANSPARENCIA FORZADA
+----------------------------------------------------
+local function setTransparency(state)
+	for _, item in ipairs(Workspace:GetDescendants()) do
+		if item.Name == "PaintDummy" then
+			for _, child in ipairs(item:GetDescendants()) do
+				if child.Name == "Skin" then
+					for _, skinObj in ipairs(child:GetDescendants()) do
+						if skinObj:IsA("ImageLabel") or skinObj:IsA("ImageButton") then
+							skinObj.ImageTransparency = state and 0.7 or 0
+						elseif skinObj:IsA("BasePart") then
+							skinObj.LocalTransparencyModifier = state and 0.7 or 0
+						end
+					end
+				elseif child:IsA("ImageLabel") then
+					child.ImageTransparency = state and 0.7 or 0
+				end
+			end
+		end
+	end
+end
+
+transButton.MouseButton1Click:Connect(function()
+	transparencyEnabled = not transparencyEnabled
+	if transparencyEnabled then
+		transButton.Text = "Transparency: ON"
+		transButton.BackgroundColor3 = Color3.fromRGB(50, 180, 50)
+	else
+		transButton.Text = "Transparency: OFF"
+		transButton.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+		setTransparency(false)
+	end
+end)
+
+----------------------------------------------------
+-- 2. LÓGICA DE OPPONENT (SELECCIÓN)
+----------------------------------------------------
+local currentSelectionBox = nil
+
+local function updateOpponentSelection()
+	if not opponentEnabled then
+		if currentSelectionBox then
+			currentSelectionBox:Destroy()
+			currentSelectionBox = nil
+		end
+		return
+	end
+
+	local targetFolder = nil
+	for _, obj in ipairs(Workspace:GetDescendants()) do
+		if obj.Name == "ChameleonOpponent" then
+			targetFolder = obj
+			break
+		end
+	end
+
+	if targetFolder then
+		local partInside = targetFolder:FindFirstChildWhichIsA("BasePart", true)
+		if partInside then
+			if not currentSelectionBox or currentSelectionBox.Adornee ~= partInside then
+				if currentSelectionBox then currentSelectionBox:Destroy() end
+				
+				currentSelectionBox = Instance.new("SelectionBox")
+				currentSelectionBox.Name = "NativeChameleonBox"
+				currentSelectionBox.Color3 = Color3.fromRGB(0, 162, 255)
+				currentSelectionBox.LineThickness = 0.05
+				currentSelectionBox.SurfaceTransparency = 1
+				currentSelectionBox.Adornee = partInside
+				currentSelectionBox.Parent = CoreGui
+			end
+		end
+	else
+		if currentSelectionBox then
+			currentSelectionBox:Destroy()
+			currentSelectionBox = nil
+		end
+	end
+end
+
+oppButton.MouseButton1Click:Connect(function()
+	opponentEnabled = not opponentEnabled
+	if opponentEnabled then
+		oppButton.Text = "Opponent: ON"
+		oppButton.BackgroundColor3 = Color3.fromRGB(50, 180, 50)
+	else
+		oppButton.Text = "Opponent: OFF"
+		oppButton.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+		if currentSelectionBox then
+			currentSelectionBox:Destroy()
+			currentSelectionBox = nil
+		end
+	end
+end)
+
+----------------------------------------------------
+-- BUCLES DE EJECUCIÓN CONSTANTE
+----------------------------------------------------
+task.spawn(function()
+	while true do
+		if transparencyEnabled then
+			setTransparency(true)
+		end
+		task.wait(0.02)
+	end
+end)
+
+RunService.RenderStepped:Connect(function()
+	if opponentEnabled then
+		pcall(updateOpponentSelection)
+	end
+end)
