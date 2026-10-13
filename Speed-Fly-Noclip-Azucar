@@ -1,0 +1,340 @@
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- Limpieza de interfaces viejas
+if playerGui:FindFirstChild("AzucarHubGui") then
+    playerGui.AzucarHubGui:Destroy()
+end
+
+----------------------------------------------------
+-- INTERFAZ GRÁFICA: AZUCAR/HUB (COMPACTA)
+----------------------------------------------------
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "AzucarHubGui"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = playerGui
+
+-- Ventana Principal (Altura reducida a 150px)
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 180, 0, 150)
+mainFrame.Position = UDim2.new(0.5, -90, 0.25, 0)
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+mainFrame.BorderSizePixel = 0
+mainFrame.Active = true
+mainFrame.Parent = screenGui
+
+local corner = Instance.new("UICorner")
+corner.CornerRadius = UDim.new(0, 8)
+corner.Parent = mainFrame
+
+-- Barra de Título
+local titleBar = Instance.new("Frame")
+titleBar.Size = UDim2.new(1, 0, 0, 26)
+titleBar.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+titleBar.BorderSizePixel = 0
+titleBar.Parent = mainFrame
+
+local titleCorner = Instance.new("UICorner")
+titleCorner.CornerRadius = UDim.new(0, 8)
+titleCorner.Parent = titleBar
+
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(0.75, 0, 1, 0)
+titleLabel.Position = UDim2.new(0.05, 0, 0, 0)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "Azucar/Hub"
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.Font = Enum.Font.SourceSansBold
+titleLabel.TextSize = 13
+titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+titleLabel.Parent = titleBar
+
+-- Botón Minimizar (-)
+local minimizeBtn = Instance.new("TextButton")
+minimizeBtn.Size = UDim2.new(0, 20, 0, 20)
+minimizeBtn.Position = UDim2.new(1, -24, 0, 3)
+minimizeBtn.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+minimizeBtn.Text = "-"
+minimizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+minimizeBtn.Font = Enum.Font.SourceSansBold
+minimizeBtn.TextSize = 14
+minimizeBtn.Parent = titleBar
+
+local minCorner = Instance.new("UICorner")
+minCorner.CornerRadius = UDim.new(0, 4)
+minCorner.Parent = minimizeBtn
+
+-- Miniatura flotante (Cuadrado con AH)
+local miniButton = Instance.new("TextButton")
+miniButton.Size = UDim2.new(0, 42, 0, 42)
+miniButton.Position = UDim2.new(0.1, 0, 0.1, 0)
+miniButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+miniButton.Text = "AH"
+miniButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+miniButton.Font = Enum.Font.SourceSansBold
+miniButton.TextSize = 15
+miniButton.Visible = false
+miniButton.Active = true
+miniButton.Parent = screenGui
+
+local miniCorner = Instance.new("UICorner")
+miniCorner.CornerRadius = UDim.new(0, 8)
+miniCorner.Parent = miniButton
+
+----------------------------------------------------
+-- SISTEMA DE ARRASTRE
+----------------------------------------------------
+local function makeDraggable(frame)
+    local dragging, dragStart, startPos
+    frame.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true
+            dragStart = input.Position
+            startPos = frame.Position
+            input.Changed:Connect(function()
+                if input.UserInputState == Enum.UserInputState.End then dragging = false end
+            end)
+        end
+    end)
+
+    UserInputService.InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - dragStart
+            frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+end
+
+makeDraggable(mainFrame)
+makeDraggable(miniButton)
+
+minimizeBtn.MouseButton1Click:Connect(function()
+    mainFrame.Visible = false
+    miniButton.Visible = true
+end)
+
+miniButton.MouseButton1Click:Connect(function()
+    miniButton.Visible = false
+    mainFrame.Visible = true
+end)
+
+----------------------------------------------------
+-- SECCIÓN 1: SPEED (FILA 1)
+----------------------------------------------------
+local speedBox = Instance.new("TextBox")
+speedBox.Size = UDim2.new(0, 70, 0, 30)
+speedBox.Position = UDim2.new(0, 12, 0, 34)
+speedBox.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+speedBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+speedBox.Text = "16"
+speedBox.Font = Enum.Font.SourceSansBold
+speedBox.TextSize = 13
+speedBox.Parent = mainFrame
+
+local sbCorner = Instance.new("UICorner")
+sbCorner.CornerRadius = UDim.new(0, 5)
+sbCorner.Parent = speedBox
+
+local speedBtn = Instance.new("TextButton")
+speedBtn.Size = UDim2.new(0, 82, 0, 30)
+speedBtn.Position = UDim2.new(0, 86, 0, 34)
+speedBtn.BackgroundColor3 = Color3.fromRGB(0, 120, 212)
+speedBtn.Text = "SET SPEED"
+speedBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+speedBtn.Font = Enum.Font.SourceSansBold
+speedBtn.TextSize = 11
+speedBtn.Parent = mainFrame
+
+local spCorner = Instance.new("UICorner")
+spCorner.CornerRadius = UDim.new(0, 5)
+spCorner.Parent = speedBtn
+
+local velocidadActual = 16
+
+speedBtn.MouseButton1Click:Connect(function()
+    local num = tonumber(speedBox.Text)
+    if num then velocidadActual = num end
+end)
+
+RunService.Heartbeat:Connect(function()
+    local char = player.Character
+    if char and char:FindFirstChildOfClass("Humanoid") then
+        char:FindFirstChildOfClass("Humanoid").WalkSpeed = velocidadActual
+    end
+end)
+
+----------------------------------------------------
+-- SECCIÓN 2: FLY (FILA 2)
+----------------------------------------------------
+local flySpeedBox = Instance.new("TextBox")
+flySpeedBox.Size = UDim2.new(0, 70, 0, 30)
+flySpeedBox.Position = UDim2.new(0, 12, 0, 70)
+flySpeedBox.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+flySpeedBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+flySpeedBox.Text = "70"
+flySpeedBox.Font = Enum.Font.SourceSansBold
+flySpeedBox.TextSize = 13
+flySpeedBox.Parent = mainFrame
+
+local fsbCorner = Instance.new("UICorner")
+fsbCorner.CornerRadius = UDim.new(0, 5)
+fsbCorner.Parent = flySpeedBox
+
+local flyBtn = Instance.new("TextButton")
+flyBtn.Size = UDim2.new(0, 82, 0, 30)
+flyBtn.Position = UDim2.new(0, 86, 0, 70)
+flyBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+flyBtn.Text = "FLY: OFF"
+flyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+flyBtn.Font = Enum.Font.SourceSansBold
+flyBtn.TextSize = 11
+flyBtn.Parent = mainFrame
+
+local flyCorner = Instance.new("UICorner")
+flyCorner.CornerRadius = UDim.new(0, 5)
+flyCorner.Parent = flyBtn
+
+local volando = false
+local velocidadVuelo = 70
+local bV, bBG
+
+local function iniciarVuelo()
+    local char = player.Character
+    if not char or not char:FindFirstChild("HumanoidRootPart") or not char:FindFirstChild("Humanoid") then return end
+    local root = char.HumanoidRootPart
+    local hum = char.Humanoid
+    
+    bV = Instance.new("BodyVelocity")
+    bV.MaxForce = Vector3.new(1e9, 1e9, 1e9)
+    bV.Velocity = Vector3.new(0, 0, 0)
+    bV.Parent = root
+    
+    bBG = Instance.new("BodyGyro")
+    bBG.MaxTorque = Vector3.new(1e9, 1e9, 1e9)
+    bBG.P = 9e4
+    bBG.CFrame = root.CFrame
+    bBG.Parent = root
+    
+    hum.PlatformStand = true
+    
+    task.spawn(function()
+        while volando and char and char.Parent and root and bV and bBG do
+            local cam = workspace.CurrentCamera
+            local camCF = cam.CFrame
+            local moveDir = hum.MoveDirection
+            local finalVec = Vector3.new(0, 0, 0)
+            
+            if moveDir.Magnitude > 0 then
+                local flatLook = Vector3.new(camCF.LookVector.X, 0, camCF.LookVector.Z)
+                local flatRight = Vector3.new(camCF.RightVector.X, 0, camCF.RightVector.Z)
+                
+                if flatLook.Magnitude > 0 then flatLook = flatLook.Unit end
+                if flatRight.Magnitude > 0 then flatRight = flatRight.Unit end
+                
+                local fwd = moveDir:Dot(flatLook)
+                local right = moveDir:Dot(flatRight)
+                
+                finalVec = (camCF.LookVector * fwd) + (camCF.RightVector * right)
+            end
+            
+            if hum.Jump or UserInputService:IsKeyDown(Enum.KeyCode.Space) then
+                finalVec = finalVec + Vector3.new(0, 1, 0)
+            end
+            if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then
+                finalVec = finalVec - Vector3.new(0, 1, 0)
+            end
+            
+            local numVel = tonumber(flySpeedBox.Text)
+            if numVel then velocidadVuelo = numVel end
+            
+            if finalVec.Magnitude > 0 then
+                bV.Velocity = finalVec.Unit * velocidadVuelo
+            else
+                bV.Velocity = Vector3.new(0, 0, 0)
+            end
+            
+            bBG.CFrame = camCF
+            RunService.RenderStepped:Wait()
+        end
+    end)
+end
+
+local function detenerVuelo()
+    if bV then bV:Destroy() end
+    if bBG then bBG:Destroy() end
+    local char = player.Character
+    if char and char:FindFirstChild("Humanoid") then
+        char.Humanoid.PlatformStand = false
+    end
+end
+
+flyBtn.MouseButton1Click:Connect(function()
+    volando = not volando
+    if volando then
+        flyBtn.Text = "FLY: ON"
+        flyBtn.BackgroundColor3 = Color3.fromRGB(50, 180, 50)
+        iniciarVuelo()
+    else
+        flyBtn.Text = "FLY: OFF"
+        flyBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+        detenerVuelo()
+    end
+end)
+
+----------------------------------------------------
+-- SECCIÓN 3: NOCLIP (FILA 3)
+----------------------------------------------------
+local noclipBtn = Instance.new("TextButton")
+noclipBtn.Size = UDim2.new(0, 156, 0, 30)
+noclipBtn.Position = UDim2.new(0, 12, 0, 106)
+noclipBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+noclipBtn.Text = "Noclip: OFF"
+noclipBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+noclipBtn.Font = Enum.Font.SourceSansBold
+noclipBtn.TextSize = 12
+noclipBtn.Parent = mainFrame
+
+local ncCorner = Instance.new("UICorner")
+ncCorner.CornerRadius = UDim.new(0, 5)
+ncCorner.Parent = noclipBtn
+
+local noclipActivo = false
+
+RunService.Stepped:Connect(function()
+    if noclipActivo and player.Character then
+        for _, v in ipairs(player.Character:GetDescendants()) do
+            if v:IsA("BasePart") and v.CanCollide then
+                v.CanCollide = false
+            end
+        end
+    end
+end)
+
+noclipBtn.MouseButton1Click:Connect(function()
+    noclipActivo = not noclipActivo
+    if noclipActivo then
+        noclipBtn.Text = "Noclip: ON"
+        noclipBtn.BackgroundColor3 = Color3.fromRGB(50, 180, 50)
+    else
+        noclipBtn.Text = "Noclip: OFF"
+        noclipBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+    end
+end)
+
+----------------------------------------------------
+-- REINICIO AL REAPARECER
+----------------------------------------------------
+player.CharacterAdded:Connect(function()
+    volando = false
+    flyBtn.Text = "FLY: OFF"
+    flyBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+    detenerVuelo()
+    
+    noclipActivo = false
+    noclipBtn.Text = "Noclip: OFF"
+    noclipBtn.BackgroundColor3 = Color3.fromRGB(180, 50, 50)
+end)
